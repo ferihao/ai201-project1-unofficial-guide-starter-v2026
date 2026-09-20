@@ -1,6 +1,6 @@
 # The Unofficial Guide
 
-<!-- Replace this line with your name and which corpus you picked. -->
+Feriha Ozturk — `city_guides` corpus.
 
 > **This file is your submission.** Fill it in as you go — most sections get
 > written during the milestone that produces them, not at the end.
@@ -21,11 +21,16 @@
 
 ## What This Does
 
-<!-- Three or four sentences. Which corpus you picked, and the kinds of
-     questions your system answers. Write it for someone who has never seen
-     this repo.
-
-     Milestone 5. -->
+This is a retrieval-augmented question-answering system over `city_guides`,
+fourteen long travel guides for a fictional English-style region — nine
+towns plus five cross-cutting guides (eating, walking, regional transport,
+seasons, accessibility). Ask it something a guide would actually cover —
+when a town's kitchens stop serving, which town is easiest to get around
+with limited mobility, why Marchwood's good restaurants are a tram ride
+away — and it retrieves the relevant passage, cites the file it came from,
+and answers only from that text. Ask it something the guides don't cover
+(capital cities, medication dosages, programming syntax) and it says so
+instead of guessing.
 
 ## Chunking Strategy
 
@@ -155,9 +160,29 @@ match and an unusually close out-of-scope match both still have equal
 
      Milestone 5. -->
 
-**1.**
+**1.** I asked Claude to write `chunker.py::split_documents` to split on the
+towns' own `##` headings instead of the fixed 800-character window, after we
+measured that the corpus's 98 sections run 23-711 characters. It wrote the
+splitter correctly, but I didn't catch that it never re-ran `python app.py
+index` afterward — so when I asked it to run Milestone 4's retrieval tests
+right after, the results were quietly coming from the *old* index, built by
+the original fixed-size chunker, not the new one. The chunk previews didn't
+match what the new function should have produced, which is what gave it
+away. It re-ran `index` to rebuild the embeddings from the new chunks, and
+the retrieval numbers changed once it did — one of the three test questions
+went from a broken result (the correct chunk not among the top matches) to
+finding it exactly, once it was actually querying the right index.
 
-**2.**
+**2.** I asked Claude to pick `TOP_K` and the relevance threshold. Rather
+than just taking the starter's suggested "start at 4 or 5," it tested 5, 6,
+7, and 8 against my actual test questions and found that at 5, one town's
+own "Eat and drink" section never came back at all — it was crowded out by
+near-identical sections from other towns that share the same heading and
+vocabulary. It picked 7 as the minimum value that fixed that one case
+without adding much extra noise to the other questions, instead of just
+raising it arbitrarily. For the threshold, it ran all five in-corpus and
+five out-of-scope questions and set the cutoff at the midpoint of the actual
+gap between them (0.64) rather than leaving the starter's default in place.
 
 <!-- ── Stretch features ─────────────────────────────────────────────────────
      Doing one? Say so here BEFORE you start. A feature this README never
