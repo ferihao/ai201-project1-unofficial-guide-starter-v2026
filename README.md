@@ -108,27 +108,41 @@ a minor injuries unit locally with limited hours.
 <!-- One complete question and answer, pasted as text, with the source line
      visible. Milestone 4. -->
 
-**Question:**
+**Question:** Why does the good food in Marchwood require a tram ride instead of just walking one street over?
 
 **Answer:**
 
 ```
+According to `guide_eating.md`, Marchwood is the exception to the region's
+pattern because its good district—Northgate—is a tram ride away rather than
+a street away, and the area immediately around the station is uniformly poor.
+
+Sources retrieved: guide_accessibility.md, guide_eating.md, guide_kestrelford.md, guide_marchwood.md, guide_pellew_sands.md, guide_thornby_wells.md
 ```
 
-**My relevance cutoff:**
+**My relevance cutoff:** 0.64
 
-<!-- The number you set in config.py, and how you got there.
-
-     You ran five questions your corpus covers and the five in OUT_OF_SCOPE
-     that it clearly doesn't, and wrote down the best distance for each. What
-     did those two groups look like? Where was the gap? Put the actual numbers
-     here — the table below wants all ten rows.
-
-     Milestone 4. -->
+In-corpus questions topped out at 0.467; out-of-scope questions bottomed out
+at 0.813 — a clean 0.346-wide gap with nothing from either group anywhere
+near the middle. This corpus's vocabulary (town names, "tram," "kitchen,"
+"seafront") apparently shares almost nothing with the out-of-scope topics, so
+the two groups separated cleanly rather than crowding the cutoff. I set the
+threshold at the midpoint of the gap, 0.64, so an unusually weak in-corpus
+match and an unusually close out-of-scope match both still have equal
+(0.17) margin before they'd flip the gate's decision.
 
 | Question | In corpus? | Best distance |
 |---|---|---|
-|  |  |  |
+| What time do kitchens in Brightwater stop serving food, and how does that differ from what visitors expect? | Yes | 0.467 |
+| Which town in the region is the easiest to get around with limited mobility? | Yes | 0.452 |
+| Why does the good food in Marchwood require a tram ride instead of just walking one street over? | Yes | 0.321 |
+| How often does the local bus run in Brightwater, and does it operate on Sundays? | Yes | 0.263 |
+| What happened to the mill building in Brightwater, and how long should a visit take? | Yes | 0.337 |
+| What is the capital of Mongolia? | No | 0.827 |
+| How do I change the oil in a diesel engine? | No | 0.903 |
+| Who won the 1994 World Cup? | No | 0.975 |
+| What is the recommended dosage of ibuprofen for a headache? | No | 0.846 |
+| How do I write a for loop in Rust? | No | 0.813 |
 
 ## How I Used AI
 
