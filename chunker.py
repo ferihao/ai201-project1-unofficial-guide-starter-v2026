@@ -22,6 +22,7 @@ to it, write down what you saw, and move on. That's a real observation about
 your pipeline, not giving up.
 """
 
+import re
 from dataclasses import dataclass
 
 import config
@@ -80,24 +81,78 @@ def fallback_split(
     return chunks
 
 
+def _split_sections(text: str) -> list[str]:
+    """
+    Break one document's text on its `##` headings.
+
+    The bare title before the first `##` (e.g. "# Walking in the region",
+    23-27 characters in this corpus) carries no content on its own, so it is
+    merged onto the front of the first real section instead of becoming its
+    own fragment.
+    """
+    pieces = re.split(r"(?=^## )", text, flags=re.MULTILINE)
+    pieces = [p.strip() for p in pieces if p.strip()]
+
+    if len(pieces) > 1 and not pieces[0].startswith("##"):
+        pieces[1] = pieces[0] + "\n\n" + pieces[1]
+        pieces = pieces[1:]
+
+    return pieces
+
+
 def split_documents(documents: list[Document]) -> list[Chunk]:
     """
-    Split documents into chunks. ⚠️ REPLACE THE BODY OF THIS IN MILESTONE 3.
+    Split on the town guides' own `##` section headings.
 
-    Right now it just calls the fallback. That is the plain, generic behaviour
-    the brief is talking about.
+    Milestone 1 read three guides and found each one built from 6-7 labelled
+    sections (Getting there, Eat and drink, When to go, ...). Measuring all 98
+    sections across the corpus put them between 23 and 711 characters, average
+    293 — comfortably inside a single chunk. A fixed 800-character window (the
+    fallback) ignores those headings and slices straight through them instead.
 
-    When you write your own strategy, set `produced_by` to
-    "chunker.py::split_documents" so your README's Sample Chunks section names
-    the right function. `app.py chunks` prints that string for you.
-
-    Things worth thinking about before you write any code:
-      - Are your documents short posts or long guides?
-      - Is the useful information in one sentence, or spread over a paragraph?
-      - Would splitting on paragraph breaks keep more thoughts intact than
-        splitting on a character count?
+    CHUNK_SIZE (900) is a cap, not a target: it sits above the longest section
+    actually observed (711), so no real section gets split. It only bites if a
+    section runs longer than anything seen so far, in which case it falls back
+    to a character-window split with CHUNK_OVERLAP (100) so a sentence caught
+    at the cut keeps a little context on both sides.
     """
-    return fallback_split(documents)
+    chunk_size = config.CHUNK_SIZE
+    overlap = config.CHUNK_OVERLAP
+
+    chunks: list[Chunk] = []
+    for doc in documents:
+        index = 0
+        for section in _split_sections(doc.text):
+            if len(section) <= chunk_size:
+                chunks.append(
+                    Chunk(
+                        text=section,
+                        source=doc.source,
+                        index=index,
+                        produced_by="chunker.py::split_documents",
+                    )
+                )
+                index += 1
+                continue
+
+            # An outsized section: fall back to a character window so it
+            # still gets chunked, rather than shipped as one huge blob.
+            start = 0
+            while start < len(section):
+                piece = section[start : start + chunk_size].strip()
+                if piece:
+                    chunks.append(
+                        Chunk(
+                            text=piece,
+                            source=doc.source,
+                            index=index,
+                            produced_by="chunker.py::split_documents",
+                        )
+                    )
+                    index += 1
+                start += chunk_size - overlap
+
+    return chunks
 
 
 def describe(chunks: list[Chunk]) -> str:
